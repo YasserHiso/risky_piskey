@@ -1,0 +1,58 @@
+{
+  "seatbelt_worn": [
+    "No",
+    "Yes"
+  ],
+  "weather_condition": [
+    "Clear",
+    "Fog",
+    "Rain",
+    "Storm"
+  ],
+  "road_surface": [
+    "Damaged",
+    "Dry",
+    "Icy",
+    "Wet"
+  ],
+  "light_condition": [
+    "Dark_Lit",
+    "Dark_Unlit",
+    "Daylight",
+    "Dusk_Dawn"
+  ],
+  "time_of_day": [
+    "Afternoon",
+    "Evening",
+    "Morning",
+    "Night"
+  ],
+  "road_class": [
+    "motorway",
+    "primary",
+    "residential",
+    "secondary"
+  ],
+  "road_quality": [
+    "Fair",
+    "Good",
+    "Poor"
+  ],
+  "vehicle_type": [
+    "Bus",
+    "Car",
+    "Motorcycle",
+    "Truck",
+    "Van"
+  ],
+  "driver_experience_level": [
+    "Experienced",
+    "Intermediate",
+    "Novice"
+  ],
+  "alcohol_influence": [
+    "Confirmed",
+    "None",
+    "Suspected"
+  ]
+}

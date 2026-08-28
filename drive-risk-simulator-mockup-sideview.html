@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Driving Risk Simulator — UI Concept (Side View)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --board-bg:#0C1017;
+  --board-line:rgba(255,255,255,.06);
+  --chrome:#101826;
+  --card:#18212F;
+  --stroke:rgba(255,255,255,.09);
+  --text:#E9EEF6;
+  --muted:#8B98AD;
+  --low:#31D08C;
+  --med:#FFB01F;
+  --high:#FF4B5C;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:var(--board-bg);
+  background-image:linear-gradient(var(--board-line) 1px,transparent 1px),linear-gradient(90deg,var(--board-line) 1px,transparent 1px);
+  background-size:44px 44px;
+  color:var(--text);font-family:var(--sans);
+  padding:28px 16px 56px;
+}
+.board{max-width:1360px;margin:0 auto}
+.board-head{margin-bottom:26px;max-width:660px}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+.board-head h1{font-size:clamp(22px,4.4vw,34px);font-weight:600;letter-spacing:-.02em;margin:8px 0 10px}
+.board-head p{color:var(--muted);font-size:14px;line-height:1.65}
+.flow{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;font-family:var(--mono);font-size:11px;color:var(--muted)}
+.flow span{background:#141C29;border:1px solid var(--stroke);border-radius:6px;padding:6px 10px}
+.flow span b{color:var(--text);font-weight:500}
+
+.rack{display:flex;flex-wrap:wrap;gap:34px 30px;align-items:flex-start}
+.slot{width:min(390px,100%)}
+.slot-cap{display:flex;align-items:baseline;gap:8px;margin-bottom:10px}
+.slot-cap b{font-size:13px;font-weight:600}
+.slot-cap i{font-style:normal;font-family:var(--mono);font-size:11px;color:var(--muted)}
+
+.phone{
+  container-type:inline-size;
+  width:100%;aspect-ratio:390/844;
+  --px:calc(100cqw / 390);
+  background:var(--chrome);
+  border:calc(1*var(--px)) solid var(--stroke);
+  border-radius:calc(30*var(--px));
+  overflow:hidden;position:relative;
+  display:flex;flex-direction:column;
+  box-shadow:0 24px 60px rgba(0,0,0,.55);
+}
+.phone[data-risk="low"]{--risk:var(--low)}
+.phone[data-risk="med"]{--risk:var(--med)}
+.phone[data-risk="high"]{--risk:var(--high)}
+.rail{height:calc(5*var(--px));background:var(--risk);flex:none}
+
+.bar{flex:none;display:flex;align-items:center;justify-content:space-between;
+  padding:calc(12*var(--px)) calc(16*var(--px)) calc(10*var(--px));}
+.brand{display:flex;align-items:baseline;gap:calc(7*var(--px))}
+.brand b{font-size:calc(15*var(--px));font-weight:600;letter-spacing:-.01em}
+.brand i{font-style:normal;font-family:var(--mono);font-size:calc(9.5*var(--px));color:var(--muted);letter-spacing:.12em;text-transform:uppercase}
+.model{display:flex;align-items:center;gap:calc(6*var(--px));font-family:var(--mono);
+  font-size:calc(10*var(--px));color:var(--muted);background:#141C29;
+  border:calc(1*var(--px)) solid var(--stroke);border-radius:calc(20*var(--px));
+  padding:calc(5*var(--px)) calc(9*var(--px))}
+.model s{text-decoration:none;width:calc(6*var(--px));height:calc(6*var(--px));border-radius:50%;background:var(--low);display:block}
+
+/* ================= SIDE-VIEW SCENE ================= */
+.sim{flex:1 1 auto;position:relative;margin:0 calc(12*var(--px));
+  border-radius:calc(18*var(--px));overflow:hidden;
+  border:calc(1*var(--px)) solid var(--stroke);
+  background:linear-gradient(180deg,var(--sky-a),var(--sky-b))}
+
+.phone[data-scene="clear-day"]{
+  --sky-a:#79C8EE;--sky-b:#CFEBF7;--hill-far:#93C39B;--hill-near:#6FAE7C;
+  --grass:#7CC08A;--dirt:#A98B63;--asphalt:#4C5464;--shoulder:#D5DBE4;--trunk:#7A5A3C;--leaf:#4E9161}
+.phone[data-scene="rain-day"]{
+  --sky-a:#5E6E82;--sky-b:#93A1B0;--hill-far:#5C7F68;--hill-near:#456B54;
+  --grass:#5F8C6D;--dirt:#7E6A50;--asphalt:#3B4353;--shoulder:#A6AEBB;--trunk:#4E3B29;--leaf:#37624A}
+.phone[data-scene="rain-night"]{
+  --sky-a:#0B1324;--sky-b:#1E2B44;--hill-far:#1D2E33;--hill-near:#152329;
+  --grass:#1C2A26;--dirt:#2E271D;--asphalt:#242B38;--shoulder:#6F7A8B;--trunk:#241B13;--leaf:#16302A}
+
+/* world = everything that tilts on a slope */
+.world{position:absolute;inset:0}
+.phone[data-slope="uphill"] .world{transform:rotate(-4.5deg) scale(1.2);transform-origin:50% 70%}
+
+.sun{position:absolute;right:calc(30*var(--px));top:calc(22*var(--px));
+  width:calc(34*var(--px));height:calc(34*var(--px));border-radius:50%;background:#FFE58A;
+  box-shadow:0 0 calc(26*var(--px)) rgba(255,229,138,.55)}
+.moon{position:absolute;right:calc(34*var(--px));top:calc(24*var(--px));
+  width:calc(26*var(--px));height:calc(26*var(--px));border-radius:50%;background:#E7EDF7;
+  box-shadow:calc(-7*var(--px)) calc(2*var(--px)) 0 0 var(--sky-a) inset,0 0 calc(22*var(--px)) rgba(231,237,247,.35)}
+.star{position:absolute;width:calc(2.5*var(--px));height:calc(2.5*var(--px));border-radius:50%;background:#fff;opacity:.85}
+
+.cloud{position:absolute;height:calc(14*var(--px));border-radius:99px;background:rgba(255,255,255,.9)}
+.cloud::before,.cloud::after{content:"";position:absolute;background:inherit;border-radius:50%}
+.cloud::before{width:calc(20*var(--px));height:calc(20*var(--px));left:calc(10*var(--px));top:calc(-9*var(--px))}
+.cloud::after{width:calc(14*var(--px));height:calc(14*var(--px));left:calc(30*var(--px));top:calc(-6*var(--px))}
+.phone[data-scene="rain-day"] .cloud{background:rgba(226,231,238,.75)}
+.phone[data-scene="rain-night"] .cloud{background:rgba(140,152,172,.35)}
+
+.hills{position:absolute;left:0;right:0;bottom:31%;height:calc(78*var(--px))}
+.hills svg{width:100%;height:100%;display:block}
+
+.tree{position:absolute;bottom:31%;width:calc(26*var(--px))}
+.tree u{display:block;margin:0 auto;width:calc(6*var(--px));height:calc(16*var(--px));background:var(--trunk);border-radius:calc(2*var(--px))}
+.tree i{display:block;width:calc(26*var(--px));height:calc(26*var(--px));border-radius:50% 50% 45% 45%;background:var(--leaf)}
+
+.ground{position:absolute;left:0;right:0;bottom:0;height:31%;background:var(--dirt)}
+.grass{position:absolute;left:0;right:0;top:0;height:calc(9*var(--px));background:var(--grass)}
+.road{position:absolute;left:0;right:0;top:calc(9*var(--px));height:calc(52*var(--px));background:var(--asphalt)}
+.road::before{content:"";position:absolute;left:0;right:0;top:0;height:calc(3*var(--px));background:var(--shoulder);opacity:.75}
+.road::after{content:"";position:absolute;left:0;right:0;bottom:0;height:calc(3*var(--px));background:rgba(0,0,0,.28)}
+.lanes{position:absolute;left:0;right:0;top:calc(24*var(--px));height:calc(4*var(--px));
+  background:repeating-linear-gradient(to right,var(--shoulder) 0 calc(24*var(--px)),transparent calc(24*var(--px)) calc(54*var(--px)));
+  opacity:.9;animation:roll var(--speed,2.4s) linear infinite}
+@keyframes roll{to{background-position:calc(-54*var(--px)) 0}}
+
+.car{position:absolute;left:26%;bottom:calc(31% - 42*var(--px));width:calc(150*var(--px))}
+.car svg{display:block;width:100%;height:auto;
+  filter:drop-shadow(0 calc(5*var(--px)) calc(7*var(--px)) rgba(0,0,0,.35))}
+
+/* weather layers (above the world, not tilted) */
+.fx{position:absolute;inset:0;pointer-events:none}
+.fx.rain{background:repeating-linear-gradient(74deg,transparent 0 calc(7*var(--px)),rgba(255,255,255,.42) calc(7*var(--px)),transparent calc(8.4*var(--px)) calc(15*var(--px)));
+  opacity:.5;animation:pour .55s linear infinite}
+@keyframes pour{to{background-position:calc(-30*var(--px)) calc(90*var(--px))}}
+.fx.wet{position:absolute;left:0;right:0;bottom:0;height:31%;
+  background:linear-gradient(180deg,rgba(255,255,255,.14),transparent 60%);mix-blend-mode:screen}
+.fx.night{background:linear-gradient(180deg,rgba(6,11,24,.25),rgba(6,11,24,.55))}
+.beam{position:absolute;left:63%;bottom:calc(31% - 33*var(--px));width:calc(110*var(--px));height:calc(40*var(--px));
+  background:linear-gradient(to right,rgba(255,241,196,.42),rgba(255,241,196,0) 85%);
+  clip-path:polygon(0 34%,0 66%,100% 100%,100% 0);filter:blur(calc(2*var(--px)))}
+.gust{position:absolute;height:calc(2*var(--px));border-radius:99px;background:rgba(255,255,255,.55)}
+.leaf{position:absolute;width:calc(6*var(--px));height:calc(4*var(--px));border-radius:60% 30%;background:var(--leaf);opacity:.9}
+
+.env{position:absolute;left:calc(10*var(--px));right:calc(10*var(--px));top:calc(10*var(--px));
+  display:flex;flex-wrap:wrap;gap:calc(6*var(--px))}
+.env span{font-family:var(--mono);font-size:calc(10*var(--px));
+  background:rgba(11,17,28,.72);border:calc(1*var(--px)) solid rgba(255,255,255,.14);
+  color:#EEF3FA;border-radius:calc(7*var(--px));padding:calc(4*var(--px)) calc(8*var(--px))}
+.env span b{font-weight:600}
+.env span em{font-style:normal;color:#9DA9BC}
+.tick{position:absolute;right:calc(10*var(--px));bottom:calc(10*var(--px));
+  font-family:var(--mono);font-size:calc(9.5*var(--px));color:#DCE4EF;
+  background:rgba(11,17,28,.72);border:calc(1*var(--px)) solid rgba(255,255,255,.14);
+  border-radius:calc(7*var(--px));padding:calc(4*var(--px)) calc(8*var(--px))}
+
+/* ================= RISK CARD ================= */
+.risk{flex:none;margin:calc(12*var(--px)) calc(12*var(--px)) 0;padding:calc(14*var(--px));
+  border-radius:calc(18*var(--px));background:var(--card);
+  border:calc(1*var(--px)) solid var(--stroke);
+  border-left:calc(4*var(--px)) solid var(--risk);position:relative;overflow:hidden}
+.phone[data-risk="high"] .risk{background:linear-gradient(180deg,rgba(255,75,92,.20),rgba(255,75,92,.05)),var(--card)}
+.phone[data-risk="med"] .risk{background:linear-gradient(180deg,rgba(255,176,31,.14),rgba(255,176,31,.03)),var(--card)}
+.phone[data-risk="high"] .sim{box-shadow:0 0 0 calc(2*var(--px)) rgba(255,75,92,.45)}
+.risk-top{display:flex;align-items:center;justify-content:space-between;gap:calc(8*var(--px))}
+.risk-label{font-size:calc(13*var(--px));font-weight:700;letter-spacing:.14em;color:var(--risk)}
+.advice{font-size:calc(11.5*var(--px));font-weight:500;color:#0E1620;background:var(--risk);
+  border-radius:calc(20*var(--px));padding:calc(5*var(--px)) calc(10*var(--px))}
+.phone[data-risk="low"] .advice{background:transparent;color:var(--low);border:calc(1*var(--px)) solid rgba(49,208,140,.45)}
+.readout{display:flex;align-items:flex-end;gap:calc(8*var(--px));margin-top:calc(6*var(--px))}
+.pct{font-size:calc(56*var(--px));font-weight:700;line-height:.95;letter-spacing:-.045em;color:var(--text);font-variant-numeric:tabular-nums}
+.pct s{text-decoration:none;font-size:calc(24*var(--px));font-weight:600;color:var(--risk)}
+.readout p{font-size:calc(11.5*var(--px));color:var(--muted);padding-bottom:calc(7*var(--px));line-height:1.35}
+.meter{display:flex;gap:calc(3*var(--px));margin-top:calc(12*var(--px))}
+.meter i{flex:1;height:calc(9*var(--px));border-radius:calc(2*var(--px));background:rgba(255,255,255,.09)}
+.meter i.on{background:var(--risk)}
+
+/* ================= CONTROLS ================= */
+.controls{flex:none;margin:calc(10*var(--px)) calc(12*var(--px)) 0;padding:calc(14*var(--px));
+  border-radius:calc(18*var(--px));background:var(--card);border:calc(1*var(--px)) solid var(--stroke)}
+.row{display:flex;align-items:center;justify-content:space-between}
+.row label{font-size:calc(12.5*var(--px));color:var(--muted)}
+.row .val{font-family:var(--mono);font-size:calc(15*var(--px));font-weight:600;color:var(--text)}
+.slider{position:relative;height:calc(6*var(--px));border-radius:99px;background:rgba(255,255,255,.11);margin:calc(13*var(--px)) 0 calc(6*var(--px))}
+.slider u{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:var(--risk);width:var(--fill,50%)}
+.slider b{position:absolute;top:50%;left:var(--fill,50%);width:calc(20*var(--px));height:calc(20*var(--px));
+  transform:translate(-50%,-50%);border-radius:50%;background:#fff;
+  box-shadow:0 calc(2*var(--px)) calc(8*var(--px)) rgba(0,0,0,.5)}
+.scale{display:flex;justify-content:space-between;font-family:var(--mono);font-size:calc(9.5*var(--px));color:#63708A}
+.sep{height:calc(1*var(--px));background:var(--stroke);margin:calc(13*var(--px)) 0}
+.toggle{display:flex;align-items:center;gap:calc(9*var(--px))}
+.toggle s{text-decoration:none;font-family:var(--mono);font-size:calc(11*var(--px));font-weight:600;letter-spacing:.08em}
+.switch{width:calc(52*var(--px));height:calc(28*var(--px));border-radius:99px;position:relative;
+  background:rgba(255,255,255,.13);border:calc(1*var(--px)) solid var(--stroke)}
+.switch i{position:absolute;top:calc(3*var(--px));width:calc(20*var(--px));height:calc(20*var(--px));border-radius:50%;background:#fff}
+.switch[data-on="true"]{background:rgba(49,208,140,.28);border-color:rgba(49,208,140,.6)}
+.switch[data-on="true"] i{right:calc(3*var(--px));background:var(--low)}
+.switch[data-on="false"] i{left:calc(3*var(--px));background:#9AA6B8}
+.on-txt{color:var(--low)}.off-txt{color:var(--high)}
+
+.io{flex:none;margin:calc(10*var(--px)) calc(12*var(--px)) calc(14*var(--px));
+  display:flex;align-items:center;gap:calc(6*var(--px));overflow:hidden;
+  font-family:var(--mono);font-size:calc(9.5*var(--px));color:#7F8CA1;
+  background:#131B27;border:calc(1*var(--px)) solid var(--stroke);
+  border-radius:calc(12*var(--px));padding:calc(9*var(--px)) calc(11*var(--px))}
+.io s{text-decoration:none;color:#5C6880;letter-spacing:.12em}
+.io u{text-decoration:none;color:#C7D2E2}
+.io b{margin-left:auto;color:var(--risk);font-weight:600;white-space:nowrap}
+
+.spec{margin-top:46px;display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.note{background:#111826;border:1px solid var(--stroke);border-radius:16px;padding:18px}
+.note h3{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:12px}
+.note li{list-style:none;font-size:13px;line-height:1.75;color:#C4CEDD;display:flex;gap:9px}
+.note li::before{content:"";flex:none;width:5px;height:5px;border-radius:50%;background:#3D4B62;margin-top:9px}
+.note code{font-family:var(--mono);font-size:12px;color:#EAF0F8}
+.sw{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:12px;color:#C4CEDD;margin-bottom:9px}
+.sw i{width:22px;height:22px;border-radius:6px;border:1px solid rgba(255,255,255,.14);flex:none}
+.type-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px dashed rgba(255,255,255,.08)}
+.type-row:last-child{border:0}
+.type-row em{font-style:normal;font-family:var(--mono);font-size:11px;color:var(--muted)}
+footer{margin-top:34px;font-family:var(--mono);font-size:11px;color:#5C6880;line-height:1.8}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+<div class="board">
+
+  <div class="board-head">
+    <div class="eyebrow">UI concept v2 · side view · mobile portrait 390 × 844</div>
+    <h1>AI Driving Risk Simulator</h1>
+    <p>Same screen, same controls, same dashboard as v1 — the driving canvas is now a flat 2D side-scrolling scene. The car holds its position on the left-centre while the road, hills and weather move past it.</p>
+    <div class="flow">
+      <span><b>Simulator</b> builds state</span>
+      <span>→ <b>ML model</b> predicts</span>
+      <span>→ <b>UI</b> shows risk</span>
+      <span>state auto-changes every <b>10s</b></span>
+    </div>
+  </div>
+
+  <div class="rack">
+
+    <!-- ============ LOW RISK ============ -->
+    <div class="slot">
+      <div class="slot-cap"><b>State A — Low risk</b><i>sunny · day · dry · belt on</i></div>
+      <div class="phone" data-risk="low" data-scene="clear-day" data-slope="flat">
+        <div class="rail"></div>
+        <div class="bar">
+          <div class="brand"><b>Drive Risk Lab</b><i>sim</i></div>
+          <div class="model"><s></s>model live</div>
+        </div>
+
+        <div class="sim">
+          <div class="world">
+            <div class="sun"></div>
+            <div class="cloud" style="left:8%;top:14%;width:calc(46*var(--px))"></div>
+            <div class="cloud" style="left:52%;top:26%;width:calc(34*var(--px));opacity:.8"></div>
+
+            <div class="hills">
+              <svg viewBox="0 0 390 78" preserveAspectRatio="none" aria-hidden="true">
+                <path d="M-20,78 Q60,18 150,52 Q220,78 280,36 Q340,0 410,44 L410,78 Z" fill="var(--hill-far)"/>
+                <path d="M-20,78 Q40,44 110,64 Q190,86 250,58 Q330,24 410,66 L410,78 Z" fill="var(--hill-near)"/>
+              </svg>
+            </div>
+
+            <div class="tree" style="left:6%"><i></i><u></u></div>
+            <div class="tree" style="left:78%"><i></i><u></u></div>
+            <div class="tree" style="left:90%;transform:scale(.8)"><i></i><u></u></div>
+
+            <div class="ground">
+              <div class="grass"></div>
+              <div class="road"><div class="lanes" style="--speed:3.4s"></div></div>
+            </div>
+
+            <div class="car">
+              <svg viewBox="0 0 160 72" aria-hidden="true">
+                <ellipse cx="82" cy="70" rx="68" ry="4" fill="#000" opacity=".16"/>
+                <path d="M6,52 Q6,56 11,56 L149,56 Q154,56 154,50 L154,42 Q154,37 148,35.5 L131,32 L116,15 Q112,10 105,10 L64,10 Q58,10 55,14 L41,32 L13,34 Q6,35 6,41 Z" fill="#F1F4F9"/>
+                <path d="M7,48 L153,48 L153,50 Q153,56 147,56 L12,56 Q7,56 7,52 Z" fill="#DCE2EC"/>
+                <path d="M63,15 L86,15 L86,31 L52,31 Z" fill="#3A455A"/>
+                <path d="M92,15 L104,15 L114,31 L92,31 Z" fill="#3A455A"/>
+                <rect x="88.4" y="33" width="1.8" height="17" rx=".9" fill="#CBD3DE"/>
+                <rect x="70" y="38" width="12" height="3.4" rx="1.7" fill="#B4BECC"/>
+                <rect x="143" y="39" width="11" height="7" rx="3" fill="#FFE9A8"/>
+                <rect x="6" y="39" width="9" height="7" rx="3" fill="#FF5B69"/>
+                <circle cx="44" cy="58" r="13.5" fill="#1B212B"/>
+                <circle cx="120" cy="58" r="13.5" fill="#1B212B"/>
+                <circle cx="44" cy="58" r="5.5" fill="#C3CBD8"/>
+                <circle cx="120" cy="58" r="5.5" fill="#C3CBD8"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="env">
+            <span><em>Weather</em> <b>Sunny</b></span>
+            <span><em>Road</em> <b>Dry</b></span>
+            <span><em>Wind</em> <b>Low</b></span>
+            <span><em>Light</em> <b>Day</b></span>
+            <span><em>Slope</em> <b>Flat</b></span>
+          </div>
+          <div class="tick">next change 7s</div>
+        </div>
+
+        <div class="risk">
+          <div class="risk-top">
+            <div class="risk-label">LOW RISK</div>
+            <div class="advice">Conditions safe</div>
+          </div>
+          <div class="readout">
+            <div class="pct">12<s>%</s></div>
+            <p>accident risk<br>predicted now</p>
+          </div>
+          <div class="meter">
+            <i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+            <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+          </div>
+        </div>
+
+        <div class="controls">
+          <div class="row"><label>Speed</label><div class="val">60 km/h</div></div>
+          <div class="slider" style="--fill:33%"><u></u><b></b></div>
+          <div class="scale"><span>0</span><span>180</span></div>
+          <div class="sep"></div>
+          <div class="row">
+            <label>Seatbelt</label>
+            <div class="toggle"><s class="on-txt">ON</s><div class="switch" data-on="true"><i></i></div></div>
+          </div>
+        </div>
+
+        <div class="io"><s>INPUT</s><u>60 · belt 1 · sunny · dry · low · day · flat</u><b>→ 0.12</b></div>
+      </div>
+    </div>
+
+    <!-- ============ MEDIUM RISK ============ -->
+    <div class="slot">
+      <div class="slot-cap"><b>State B — Medium risk</b><i>rain · wind · day · wet · belt on</i></div>
+      <div class="phone" data-risk="med" data-scene="rain-day" data-slope="flat">
+        <div class="rail"></div>
+        <div class="bar">
+          <div class="brand"><b>Drive Risk Lab</b><i>sim</i></div>
+          <div class="model"><s></s>model live</div>
+        </div>
+
+        <div class="sim">
+          <div class="world">
+            <div class="cloud" style="left:4%;top:12%;width:calc(56*var(--px))"></div>
+            <div class="cloud" style="left:46%;top:20%;width:calc(44*var(--px))"></div>
+            <div class="cloud" style="left:74%;top:9%;width:calc(36*var(--px));opacity:.75"></div>
+
+            <div class="hills">
+              <svg viewBox="0 0 390 78" preserveAspectRatio="none" aria-hidden="true">
+                <path d="M-20,78 Q60,18 150,52 Q220,78 280,36 Q340,0 410,44 L410,78 Z" fill="var(--hill-far)"/>
+                <path d="M-20,78 Q40,44 110,64 Q190,86 250,58 Q330,24 410,66 L410,78 Z" fill="var(--hill-near)"/>
+              </svg>
+            </div>
+
+            <div class="tree" style="left:6%;transform:rotate(-7deg);transform-origin:bottom center"><i></i><u></u></div>
+            <div class="tree" style="left:80%;transform:rotate(-9deg);transform-origin:bottom center"><i></i><u></u></div>
+
+            <div class="ground">
+              <div class="grass"></div>
+              <div class="road"><div class="lanes" style="--speed:2.1s"></div></div>
+            </div>
+
+            <div class="car">
+              <svg viewBox="0 0 160 72" aria-hidden="true">
+                <ellipse cx="82" cy="70" rx="68" ry="4" fill="#000" opacity=".2"/>
+                <path d="M6,52 Q6,56 11,56 L149,56 Q154,56 154,50 L154,42 Q154,37 148,35.5 L131,32 L116,15 Q112,10 105,10 L64,10 Q58,10 55,14 L41,32 L13,34 Q6,35 6,41 Z" fill="#EDF1F7"/>
+                <path d="M7,48 L153,48 L153,50 Q153,56 147,56 L12,56 Q7,56 7,52 Z" fill="#D3DAE5"/>
+                <path d="M63,15 L86,15 L86,31 L52,31 Z" fill="#384357"/>
+                <path d="M92,15 L104,15 L114,31 L92,31 Z" fill="#384357"/>
+                <rect x="88.4" y="33" width="1.8" height="17" rx=".9" fill="#C3CCD9"/>
+                <rect x="70" y="38" width="12" height="3.4" rx="1.7" fill="#AAB4C3"/>
+                <rect x="143" y="39" width="11" height="7" rx="3" fill="#FFF3C8"/>
+                <rect x="6" y="39" width="9" height="7" rx="3" fill="#FF5B69"/>
+                <circle cx="44" cy="58" r="13.5" fill="#1B212B"/>
+                <circle cx="120" cy="58" r="13.5" fill="#1B212B"/>
+                <circle cx="44" cy="58" r="5.5" fill="#B9C2CE"/>
+                <circle cx="120" cy="58" r="5.5" fill="#B9C2CE"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="fx wet"></div>
+          <div class="fx rain"></div>
+          <div class="gust" style="left:12%;top:44%;width:calc(46*var(--px))"></div>
+          <div class="gust" style="left:34%;top:52%;width:calc(30*var(--px));opacity:.6"></div>
+          <div class="leaf" style="left:62%;top:47%"></div>
+          <div class="leaf" style="left:70%;top:58%;transform:rotate(24deg)"></div>
+
+          <div class="env">
+            <span><em>Weather</em> <b>Rain</b></span>
+            <span><em>Road</em> <b>Wet</b></span>
+            <span><em>Wind</em> <b>Medium</b></span>
+            <span><em>Light</em> <b>Day</b></span>
+            <span><em>Slope</em> <b>Flat</b></span>
+          </div>
+          <div class="tick">next change 4s</div>
+        </div>
+
+        <div class="risk">
+          <div class="risk-top">
+            <div class="risk-label">MEDIUM RISK</div>
+            <div class="advice">Ease off the speed</div>
+          </div>
+          <div class="readout">
+            <div class="pct">54<s>%</s></div>
+            <p>accident risk<br>predicted now</p>
+          </div>
+          <div class="meter">
+            <i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i>
+            <i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i>
+            <i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+          </div>
+        </div>
+
+        <div class="controls">
+          <div class="row"><label>Speed</label><div class="val">95 km/h</div></div>
+          <div class="slider" style="--fill:53%"><u></u><b></b></div>
+          <div class="scale"><span>0</span><span>180</span></div>
+          <div class="sep"></div>
+          <div class="row">
+            <label>Seatbelt</label>
+            <div class="toggle"><s class="on-txt">ON</s><div class="switch" data-on="true"><i></i></div></div>
+          </div>
+        </div>
+
+        <div class="io"><s>INPUT</s><u>95 · belt 1 · rain · wet · med · day · flat</u><b>→ 0.54</b></div>
+      </div>
+    </div>
+
+    <!-- ============ HIGH RISK ============ -->
+    <div class="slot">
+      <div class="slot-cap"><b>State C — High risk</b><i>rain · night · wet · uphill · belt off</i></div>
+      <div class="phone" data-risk="high" data-scene="rain-night" data-slope="uphill">
+        <div class="rail"></div>
+        <div class="bar">
+          <div class="brand"><b>Drive Risk Lab</b><i>sim</i></div>
+          <div class="model"><s></s>model live</div>
+        </div>
+
+        <div class="sim">
+          <div class="world">
+            <div class="moon"></div>
+            <div class="star" style="left:14%;top:12%"></div>
+            <div class="star" style="left:26%;top:22%;opacity:.6"></div>
+            <div class="star" style="left:40%;top:9%"></div>
+            <div class="star" style="left:58%;top:18%;opacity:.5"></div>
+            <div class="star" style="left:72%;top:30%"></div>
+            <div class="cloud" style="left:8%;top:24%;width:calc(50*var(--px))"></div>
+            <div class="cloud" style="left:56%;top:14%;width:calc(38*var(--px))"></div>
+
+            <div class="hills">
+              <svg viewBox="0 0 390 78" preserveAspectRatio="none" aria-hidden="true">
+                <path d="M-20,78 Q60,18 150,52 Q220,78 280,36 Q340,0 410,44 L410,78 Z" fill="var(--hill-far)"/>
+                <path d="M-20,78 Q40,44 110,64 Q190,86 250,58 Q330,24 410,66 L410,78 Z" fill="var(--hill-near)"/>
+              </svg>
+            </div>
+
+            <div class="tree" style="left:8%;transform:rotate(-11deg);transform-origin:bottom center"><i></i><u></u></div>
+            <div class="tree" style="left:82%;transform:rotate(-13deg);transform-origin:bottom center"><i></i><u></u></div>
+
+            <div class="ground">
+              <div class="grass"></div>
+              <div class="road"><div class="lanes" style="--speed:1.2s"></div></div>
+            </div>
+
+            <div class="beam"></div>
+
+            <div class="car">
+              <svg viewBox="0 0 160 72" aria-hidden="true">
+                <ellipse cx="82" cy="70" rx="68" ry="4" fill="#000" opacity=".3"/>
+                <path d="M6,52 Q6,56 11,56 L149,56 Q154,56 154,50 L154,42 Q154,37 148,35.5 L131,32 L116,15 Q112,10 105,10 L64,10 Q58,10 55,14 L41,32 L13,34 Q6,35 6,41 Z" fill="#D9DFE9"/>
+                <path d="M7,48 L153,48 L153,50 Q153,56 147,56 L12,56 Q7,56 7,52 Z" fill="#BEC6D3"/>
+                <path d="M63,15 L86,15 L86,31 L52,31 Z" fill="#2A3445"/>
+                <path d="M92,15 L104,15 L114,31 L92,31 Z" fill="#2A3445"/>
+                <rect x="88.4" y="33" width="1.8" height="17" rx=".9" fill="#AEB7C4"/>
+                <rect x="70" y="38" width="12" height="3.4" rx="1.7" fill="#98A2B0"/>
+                <rect x="143" y="39" width="11" height="7" rx="3" fill="#FFF6D2"/>
+                <rect x="6" y="39" width="9" height="7" rx="3" fill="#FF3A4B"/>
+                <circle cx="44" cy="58" r="13.5" fill="#12161E"/>
+                <circle cx="120" cy="58" r="13.5" fill="#12161E"/>
+                <circle cx="44" cy="58" r="5.5" fill="#8E98A6"/>
+                <circle cx="120" cy="58" r="5.5" fill="#8E98A6"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="fx night"></div>
+          <div class="fx wet"></div>
+          <div class="fx rain" style="opacity:.62"></div>
+          <div class="gust" style="left:10%;top:40%;width:calc(58*var(--px));opacity:.4"></div>
+          <div class="gust" style="left:38%;top:50%;width:calc(38*var(--px));opacity:.3"></div>
+
+          <div class="env">
+            <span><em>Weather</em> <b>Rain</b></span>
+            <span><em>Road</em> <b>Wet</b></span>
+            <span><em>Wind</em> <b>Strong</b></span>
+            <span><em>Light</em> <b>Night</b></span>
+            <span><em>Slope</em> <b>Uphill</b></span>
+          </div>
+          <div class="tick">next change 2s</div>
+        </div>
+
+        <div class="risk">
+          <div class="risk-top">
+            <div class="risk-label">HIGH RISK</div>
+            <div class="advice">⚠ Slow down</div>
+          </div>
+          <div class="readout">
+            <div class="pct">87<s>%</s></div>
+            <p>accident risk<br>predicted now</p>
+          </div>
+          <div class="meter">
+            <i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i>
+            <i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i>
+            <i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i>
+            <i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i>
+          </div>
+        </div>
+
+        <div class="controls">
+          <div class="row"><label>Speed</label><div class="val">140 km/h</div></div>
+          <div class="slider" style="--fill:78%"><u></u><b></b></div>
+          <div class="scale"><span>0</span><span>180</span></div>
+          <div class="sep"></div>
+          <div class="row">
+            <label>Seatbelt</label>
+            <div class="toggle"><s class="off-txt">OFF</s><div class="switch" data-on="false"><i></i></div></div>
+          </div>
+        </div>
+
+        <div class="io"><s>INPUT</s><u>140 · belt 0 · rain · wet · strong · night · up</u><b>→ 0.87</b></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============ HANDOFF SPEC ============ -->
+  <div class="spec">
+
+    <div class="note">
+      <h3>Palette</h3>
+      <div class="sw"><i style="background:#101826"></i>#101826 — screen / chrome</div>
+      <div class="sw"><i style="background:#18212F"></i>#18212F — card surface</div>
+      <div class="sw"><i style="background:#E9EEF6"></i>#E9EEF6 — primary text</div>
+      <div class="sw"><i style="background:#8B98AD"></i>#8B98AD — labels, muted</div>
+      <div class="sw"><i style="background:#31D08C"></i>#31D08C — low risk (0–33%)</div>
+      <div class="sw"><i style="background:#FFB01F"></i>#FFB01F — medium risk (34–66%)</div>
+      <div class="sw"><i style="background:#FF4B5C"></i>#FF4B5C — high risk (67–100%)</div>
+      <div class="sw"><i style="background:#4C5464"></i>#4C5464 — asphalt (darkens when wet / at night)</div>
+    </div>
+
+    <div class="note">
+      <h3>Scene layers (back → front)</h3>
+      <li>Sky gradient · sun or moon + stars.</li>
+      <li>Clouds — 2 or 3, drifting slowly to the left.</li>
+      <li>Two hill silhouettes, far one lighter than the near one.</li>
+      <li>Trees on the grass line, tilted a few degrees when the wind is strong.</li>
+      <li>Ground: grass strip → asphalt road → dirt below.</li>
+      <li>Car, fixed at ~26% from the left, wheels sitting on the road.</li>
+      <li>Weather overlay: rain, wet sheen, night tint, headlight beam.</li>
+      <li>UI overlay: environment pills top, countdown bottom-right.</li>
+    </div>
+
+    <div class="note">
+      <h3>Build notes — Flame canvas</h3>
+      <li>Sky, grass, road, dirt: four <code>RectangleComponent</code>s stacked by priority. No sprites required.</li>
+      <li>Motion = lane dashes, clouds and hills scrolling left; the car never moves. A <code>ParallaxComponent</code> handles all three at different speeds.</li>
+      <li>Scroll speed is tied to the slider value, so the scene visibly speeds up as km/h rises.</li>
+      <li>Rain: ~40 short white lines looping down. Fog: one translucent white rectangle. Night: one dark rectangle + a triangle headlight beam.</li>
+      <li>Uphill / downhill: rotate the whole world layer by ±4°, and scale it slightly so no gap shows at the corners. Nothing else changes.</li>
+      <li>Car: one simple side-view sprite, ~160 × 72 logical px — body silhouette, two windows, door line, two wheels with rims, one headlight, one taillight. Ten flat shapes, no gradients.</li>
+    </div>
+
+    <div class="note">
+      <h3>Build notes — Flutter shell</h3>
+      <li>Everything outside the canvas is plain Flutter: <code>Column</code> + <code>Card</code> + <code>Slider</code> + <code>Switch</code>.</li>
+      <li>The Flame <code>GameWidget</code> sits inside the simulation container only, clipped to radius 18.</li>
+      <li>Environment pills are a <code>Wrap</code> of chips overlaid with <code>Stack</code> — add or drop a feature without touching the layout.</li>
+      <li>Risk colour comes from one function <code>colorFor(score)</code>; it drives the rail, the card, the meter and the slider fill.</li>
+      <li>On high risk only, the canvas gets a 2px red outline — the warning stays contained instead of flooding the screen.</li>
+    </div>
+
+    <div class="note">
+      <h3>Type scale</h3>
+      <div class="type-row"><span>Risk percentage</span><em>56 / w700 / -4.5%</em></div>
+      <div class="type-row"><span>Risk label</span><em>13 / w700 / +14%</em></div>
+      <div class="type-row"><span>Speed value</span><em>Mono 15 / w600</em></div>
+      <div class="type-row"><span>Control label</span><em>12.5 / w400</em></div>
+      <div class="type-row"><span>Environment pill</span><em>Mono 10 / w400–600</em></div>
+      <div class="type-row"><span>Family</span><em>IBM Plex Sans + Mono</em></div>
+    </div>
+
+    <div class="note">
+      <h3>State loop</h3>
+      <li>Every 10s the simulator picks a new environment state; the countdown sits bottom-right of the canvas.</li>
+      <li>That state plus current speed and seatbelt goes to the model as one feature row.</li>
+      <li>The returned score animates over ~400ms so the change is visible on camera during a demo.</li>
+      <li>The input strip at the bottom shows the exact row being sent — it keeps the model visible, not just its output.</li>
+    </div>
+
+  </div>
+
+  <footer>
+    Mockup only — no game logic, no model code.<br>
+    Hand this file to the coding agent as the visual reference for the Flutter + Flame implementation.
+  </footer>
+
+</div>
+</body>
+</html>

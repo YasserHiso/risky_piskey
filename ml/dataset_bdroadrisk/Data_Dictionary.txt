@@ -1,0 +1,94 @@
+Dataset Overview: 
+The BDRoadRisk dataset contains 10 million synthetic GPS-based traffic event records simulating road conditions on the urban road networks of Dhaka and Chittagong, Bangladesh. Each record includes 23 features and a target class. The target class has 3 attributes which are No_accident, Minor and Major. The dataset can be used to measure how severe a recorded accident was, with post-incident severity classification tasks. The No_Accident class is included to represent near-miss and non-collision events, whereas Minor class indicates minor collusion and injury and Major class indicates fatal and serious injuries.
+
+Dataset Composition: 
+- Total Records: 10 million
+- Total Features: 23 
+- Target Class Labels: No_accident, Minor and Major.
+- Class Distribution: No_accident 74.41%, Minor 17.30%, and Major 8.28%.
+
+The dataset consists of Pre-Accident features describing environmental, road, vehicle, and driver conditions before an accident, and Post-Accident features representing driving behavior and incident-related factors after the accident occurrence. The following table presents the detailed features associated with each record type.
+
++----------------+-------------------------------------------------------------------------------------------------------+
+| Record Type    | Features                                                                                              |
++----------------+-------------------------------------------------------------------------------------------------------+
+| Pre Accident   | latitude, longitude, temperature_celsius, vehicle_age_years, driver_age, weather_condition,           |
+|                | road_surface, light_condition, time_of_day, vehicle_type, road_quality, speed_limit_zone,             |
+|                | month, road_class                                                                                     |
++----------------+-------------------------------------------------------------------------------------------------------+
+| Post Accident  | speed_kmh, acceleration_ms2, visibility_km, traffic_density, reaction_time_sec, junction_type,        |
+|                | driver_experience_level, alcohol_influence, seatbelt_worn                                             |
++----------------+-------------------------------------------------------------------------------------------------------+
+
+
+The following table presents all features along with their corresponding descriptions.
++--------------------------------------------------+-----------------------------------------------------------------------------------------------------------+----------------------------
+| Feature (Attributes)                             | Description (Range / Logic)                                                                               | Category                 |             
++--------------------------------------------------+-----------------------------------------------------------------------------------------------------------+----------------------------
+| latitude (Continuous decimal)                    | GPS latitude coordinate. 60% of records represent Dhaka, 40% represent Chittagong. Range: 23.70-23.90     | Environmental context    |             
+|                                                  | (Dhaka), 22.25-22.45 (CTG).                                                                               |                                      
++--------------------------------------------------+-----------------------------------------------------------------------------------------------------------+----------------------------
+| longitude (Continuous decimal)                   | GPS longitude coordinate paired with latitude to identify the road segment. Range: 90.33-90.50 (Dhaka),   | Environmental context    |             
+|                                                  | 91.75-91.90 (CTG).                                                                                        |                                      
++--------------------------------------------------+-----------------------------------------------------------------------------------------------------------+----------------------------
+| speed_kmh (Continuous, road-class dependent)     | Vehicle speed at the moment of the event. Road-class baseline with per-class shift. Minor is bimodal with | Core predictive          |             
+|                                                  | 35% slow urban sub-population. Range: 0-200 km/h.                                                         |                                      
++--------------------------------------------------+-----------------------------------------------------------------------------------------------------------+----------------------------
+| acceleration_ms2 (Continuous)                    | Rate of speed change. Negative values indicate braking. Hard braking is a strong signal for Major         | Core predictive          |             
+|                                                  | accidents. Range: -9.0 to +4.0 m/s².                                                                      |                                      
++--------------------------------------------------+-----------------------------------------------------------------------------------------------------------+----------------------------
+| visibility_km (Continuous)                       | Forward visibility in kilometres. Driven by weather condition and severity class. Range: 0.1-10.0 km.     | Core predictive          |            
++--------------------------------------------------+-----------------------------------------------------------------------------------------------------------+----------------------------
+| temperature_celsius (Continuous, non-predictive) | Ambient temperature. Season-dependent only, same distribution across all classes. Intentional noise       | Controlled noise         |            
+|                                                  | feature. Range: -5 to 45 °C.                                                                              |                          |                                 
++--------------------------------------------------+-----------------------------------------------------------------------------------------------------------+----------------------------
+| traffic_density (Integer, non-monotonic)         | Vehicles per kilometre. Non-monotonic: Minor peaks highest due to congestion, Major is lowest due to      | Core predictive          |            
+|                                                  | open-road conditions. Range: 1-200 veh/km.                                                                |                          |            
++--------------------------------------------------+-----------------------------------------------------------------------------------------------------------+----------------------------
+| vehicle_age_years (Integer, right-skewed)        | Age of vehicle. Exponential distribution with weak predictive signal by design. Range: 0-25 years.        | Demographic / Behavioral |
++--------------------------------------------------+-----------------------------------------------------------------------------------------------------------+----------------------------
+| driver_age (Integer, weak signal)                | Age of driver. Near-identical Gaussian distribution across classes, controlled weak signal feature.       | Demographic / Behavioral |
+|                                                  | Range: 18-75 years.                                                                                       |                                      
++--------------------------------------------------+-----------------------------------------------------------------------------------------------------------+----------------------------
+| reaction_time_sec (Continuous, time-conditional) | Driver reaction time. Conditional on time_of_day: strong class separation at Night, nearly flat at        | Core predictive          |             
+|                                                  | Afternoon. Range: 0.5-3.5 s.                                                                              |                                      
++--------------------------------------------------+-----------------------------------------------------------------------------------------------------------+----------------------------
+| weather_condition (Clear, Rain, Fog, Storm)      | Atmospheric weather condition. Season-aware generation: monsoon elevates Rain and Storm, winter elevates  | Environmental context    |            
+|                                                  | Fog.                                                                                                      |                                      
++--------------------------------------------------+-----------------------------------------------------------------------------------------------------------+----------------------------
+| road_surface (Dry, Wet, Icy, Damaged)            | Road surface condition derived from weather_condition using a conditional probability table.              | Environmental context    |            
++--------------------------------------------------+-----------------------------------------------------------------------------------------------------------+----------------------------
+| junction_type (None, T-Junction, Crossroad,      | Road junction type. Generated using a 50/50 blend of road-class-driven and severity-driven distributions. | Environmental context    |            
+| Roundabout)                                      | Minor accidents are strongly junction-associated.                                                         |                                      
++--------------------------------------------------+-----------------------------------------------------------------------------------------------------------+----------------------------
+| light_condition (Daylight, Dusk_Dawn, Dark_Lit,  | Ambient lighting condition derived from time_of_day through a conditional probability table.              | Environmental context    |            
+| Dark_Unlit)                                      |                                                                                                           |                          |            
++--------------------------------------------------+-----------------------------------------------------------------------------------------------------------+----------------------------
+| time_of_day (Morning, Afternoon, Evening, Night) | Time period of the event. Night slightly elevated to approximately 24% to reflect Bangladesh road         | Environmental context    |            
+|                                                  | conditions.                                                                                               |                          |            
++--------------------------------------------------+-----------------------------------------------------------------------------------------------------------+----------------------------
+| vehicle_type (Car, Truck, Motorcycle, Bus, Van)  | Vehicle type distribution reflecting Bangladesh traffic conditions where Motorcycle is the most common    | Demographic / Behavioral |
+|                                                  | category at approximately 35%.                                                                            |                          |            
++--------------------------------------------------+-----------------------------------------------------------------------------------------------------------+----------------------------
+| driver_experience_level (Novice < Intermediate < | Driver experience level. Strong predictive feature for Major accidents: approximately 50% Novice in Major | Core predictive          |               
+| Experienced)                                     | vs 9% in No_Accident.                                                                                     |                          |            
++--------------------------------------------------+-----------------------------------------------------------------------------------------------------------+----------------------------
+| road_quality (Poor < Fair < Good)                | Road infrastructure quality dependent on road_class. Poor quality roads elevate accident probability by   | Environmental context    |            
+|                                                  | approximately 1.55×.                                                                                      |                          |            
++--------------------------------------------------+-----------------------------------------------------------------------------------------------------------+----------------------------
+| speed_limit_zone (30 < 50 < 80 < 100 < 120 km/h) | Posted speed limit zone. Distribution depends only on road_class with no direct severity bias.            | Environmental context    |            
++--------------------------------------------------+-----------------------------------------------------------------------------------------------------------+----------------------------
+| alcohol_influence (None < Suspected < Confirmed) | Driver alcohol influence level. Confirmed alcohol increases from approximately 2% in No_Accident to 19%   | Core predictive          |            
+|                                                  | in Major.                                                                                                 |                          |            
++--------------------------------------------------+-----------------------------------------------------------------------------------------------------------+----------------------------
+| seatbelt_worn (Yes > No)                         | Seatbelt compliance indicator. Strong predictive signal: approximately 90% worn in No_Accident and 45%    | Core predictive          |            
+|                                                  | worn in Major.                                                                                            |                          |            
++--------------------------------------------------+-----------------------------------------------------------------------------------------------------------+----------------------------
+| month (1–12)                                     | Calendar month used to drive seasonal weather patterns and accident probability multipliers.              | Environmental context    |            
++--------------------------------------------------+-----------------------------------------------------------------------------------------------------------+----------------------------
+| road_class (motorway, primary, secondary,        | Road classification. Controls speed baseline, junction distribution, road quality, and speed limit        | Environmental context    |            
+| residential)                                     | distributions.                                                                                            |                          |            
++--------------------------------------------------+-----------------------------------------------------------------------------------------------------------+----------------------------
+| accident_severity (No_Accident, Minor, Major)    | Target severity label with 1.8% boundary noise applied at the No_Accident and Minor boundary. Approximate | Core predictive          |            
+|                                                  | distribution: 75%, 17%, and 8%.                                                                           |                          |            
++--------------------------------------------------+-----------------------------------------------------------------------------------------------------------+----------------------------

@@ -1,0 +1,34 @@
+{
+  "speed_kmh": {
+    "min": 0.0,
+    "max": 200.0
+  },
+  "speed_limit_zone": {
+    "min": 30.0,
+    "max": 120.0
+  },
+  "vehicle_age_years": {
+    "min": 0.0,
+    "max": 25.0
+  },
+  "driver_age": {
+    "min": 18.0,
+    "max": 75.0
+  },
+  "month": {
+    "min": 1.0,
+    "max": 12.0
+  },
+  "latitude": {
+    "min": 22.25,
+    "max": 23.899999
+  },
+  "longitude": {
+    "min": 90.33,
+    "max": 91.899999
+  },
+  "traffic_density": {
+    "min": 1.0,
+    "max": 170.0
+  }
+}

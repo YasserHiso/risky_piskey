@@ -1,0 +1,95 @@
+{
+  "model_name": "RandomForest",
+  "dataset": "BDRoadRisk (Mendeley Data, DOI 10.17632/m33bsbsgx2.3) \u2014 SYNTHETIC",
+  "sample_size": 500000,
+  "sampling_strategy": "systematic 1-in-20 rows from the full 10,000,000-row source CSV",
+  "live_controls": [
+    "speed_kmh",
+    "seatbelt_worn"
+  ],
+  "auto_environment": [
+    "weather_condition",
+    "road_surface",
+    "light_condition",
+    "time_of_day"
+  ],
+  "fixed_context": [
+    "road_class",
+    "road_quality",
+    "speed_limit_zone",
+    "vehicle_type",
+    "vehicle_age_years",
+    "driver_age",
+    "driver_experience_level",
+    "alcohol_influence",
+    "month",
+    "latitude",
+    "longitude",
+    "traffic_density"
+  ],
+  "excluded_features": {
+    "junction_type": "Severity-driven generation (50% of its distribution sampled from the target label) \u2014 confirmed leakage.",
+    "visibility_km": "Severity-driven generation ('driven by weather condition and severity class') \u2014 confirmed leakage.",
+    "acceleration_ms2": "Describes the mechanics of a specific incident (braking at that moment), not a pre-existing condition; not settable by a real-time simulator.",
+    "reaction_time_sec": "Same as above \u2014 only meaningful in hindsight of a specific event.",
+    "temperature_celsius": "Dataset's own documentation labels it 'non-predictive... Intentional noise feature'."
+  },
+  "target": "accident_severity: No_Accident / Minor / Major",
+  "cv_results": {
+    "LogisticRegression": {
+      "test_accuracy": 0.8018924999999999,
+      "test_f1_macro": 0.7253988691332639,
+      "test_precision_macro": 0.6969350662026259,
+      "test_recall_macro": 0.7729851891609119,
+      "test_roc_auc_ovr_macro": 0.9171508707475805
+    },
+    "RandomForest": {
+      "test_accuracy": 0.8111774999999998,
+      "test_f1_macro": 0.7307379364283424,
+      "test_precision_macro": 0.7046029954318476,
+      "test_recall_macro": 0.771675501480716,
+      "test_roc_auc_ovr_macro": 0.9211765435833069
+    },
+    "ExtraTrees": {
+      "test_accuracy": 0.782855,
+      "test_f1_macro": 0.689955660338708,
+      "test_precision_macro": 0.6622061863328808,
+      "test_recall_macro": 0.7345617563948423,
+      "test_roc_auc_ovr_macro": 0.8968839033946342
+    }
+  },
+  "test_set_metrics": {
+    "accuracy": 0.81064,
+    "precision_macro": 0.7035403296185825,
+    "recall_macro": 0.7697681258087474,
+    "f1_macro": 0.7295096393966144,
+    "roc_auc_ovr_macro": 0.9198682064547442,
+    "confusion_matrix": [
+      [
+        6749,
+        1502,
+        64
+      ],
+      [
+        2699,
+        11263,
+        3378
+      ],
+      [
+        380,
+        10913,
+        63052
+      ]
+    ],
+    "confusion_matrix_labels": [
+      "Major",
+      "Minor",
+      "No_Accident"
+    ]
+  },
+  "class_distribution": {
+    "No_Accident": 0.7435,
+    "Minor": 0.1734,
+    "Major": 0.0831
+  }
+}

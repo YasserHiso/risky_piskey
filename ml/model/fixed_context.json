@@ -1,0 +1,14 @@
+{
+  "road_class": "primary",
+  "road_quality": "Good",
+  "speed_limit_zone": 80,
+  "vehicle_type": "Car",
+  "vehicle_age_years": 3,
+  "driver_age": 35,
+  "driver_experience_level": "Experienced",
+  "alcohol_influence": "None",
+  "month": 6,
+  "latitude": 23.7999,
+  "longitude": 90.4149,
+  "traffic_density": 55
+}
